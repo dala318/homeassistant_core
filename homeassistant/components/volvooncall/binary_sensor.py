@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-from . import DATA_KEY, VolvoEntity
+from . import DATA_KEY, DOMAIN, VolvoEntity
 
 
 async def async_setup_platform(
@@ -23,6 +23,11 @@ async def async_setup_platform(
 
 class VolvoSensor(VolvoEntity, BinarySensorEntity):
     """Representation of a Volvo sensor."""
+
+    @property
+    def device_info(self):
+        """Return unique identifier."""
+        return {"identifiers": (DOMAIN, self.vin)}
 
     @property
     def is_on(self):
