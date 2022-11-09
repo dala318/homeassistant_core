@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from synology_dsm.api.core.utilization import SynoCoreUtilization
+from synology_dsm.api.download_station import SynoDownloadStation
 from synology_dsm.api.dsm.information import SynoDSMInformation
 from synology_dsm.api.storage.storage import SynoStorage
 
@@ -25,7 +26,7 @@ from homeassistant.const import (
     TEMP_CELSIUS,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.dt import utcnow
@@ -263,7 +264,6 @@ INFORMATION_SENSORS: tuple[SynologyDSMSensorEntityDescription, ...] = (
         native_unit_of_measurement=TEMP_CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     SynologyDSMSensorEntityDescription(
         api_key=SynoDSMInformation.API_KEY,
@@ -272,6 +272,15 @@ INFORMATION_SENSORS: tuple[SynologyDSMSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_registry_enabled_default=False,
         entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+)
+
+DOWNLOAD_STATION_SENSORS: tuple[SynologyDSMSensorEntityDescription, ...] = (
+    SynologyDSMSensorEntityDescription(
+        api_key=SynoDSMInformation.API_KEY,
+        key="active_downloads",
+        name="Active Downloads",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
 )
 
@@ -284,7 +293,12 @@ async def async_setup_entry(
     api = data.api
     coordinator = data.coordinator_central
 
-    entities: list[SynoDSMUtilSensor | SynoDSMStorageSensor | SynoDSMInfoSensor] = [
+    entities: list[
+        SynoDSMUtilSensor
+        | SynoDSMStorageSensor
+        | SynoDSMInfoSensor
+        | SynoDSMDownloadStationSensor
+    ] = [
         SynoDSMUtilSensor(api, coordinator, description)
         for description in UTILISATION_SENSORS
     ]
@@ -306,6 +320,15 @@ async def async_setup_entry(
                 SynoDSMStorageSensor(api, coordinator, description, disk)
                 for disk in entry.data.get(CONF_DISKS, api.storage.disks_ids)
                 for description in STORAGE_DISK_SENSORS
+            ]
+        )
+
+    # Handle download station
+    if api.download_station:
+        entities.extend(
+            [
+                SynoDSMDownloadStationSensor(api, coordinator, description)
+                for description in DOWNLOAD_STATION_SENSORS
             ]
         )
 
@@ -393,6 +416,52 @@ class SynoDSMStorageSensor(SynologyDSMDeviceEntity, SynoDSMSensor):
             return round(attr / 1024.0**4, 2)
 
         return attr
+
+
+class SynoDSMDownloadStationSensor(SynoDSMSensor):
+    """Representation a Synology Download Station sensor."""
+
+    entity_description: SynologyDSMSensorEntityDescription
+
+    # def __init__(
+    #     self,
+    #     api: SynoApi,
+    #     coordinator: DataUpdateCoordinator[dict[str, dict[str, Any]]],
+    #     description: SynologyDSMSensorEntityDescription,
+    # ) -> None:
+    #     """Initialize the Synology DSM storage sensor entity."""
+    #     super().__init__(api, coordinator, description)
+
+    @property
+    def native_value(self) -> Any | None:
+        """Return the state."""
+        attr = getattr(self._api.download_station, self.entity_description.key)
+        if attr is None:
+            return None
+
+        # # Data (disk space)
+        # if self.native_unit_of_measurement == DATA_TERABYTES:
+        #     return round(attr / 1024.0**4, 2)
+
+        return attr
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device information."""
+        return DeviceInfo(
+            identifiers={
+                (
+                    DOMAIN,
+                    f"{self._api.information.serial}_{self._api.download_station.information}",
+                )
+            },
+            # name=self.camera_data.name,
+            # model=self.camera_data.model,
+            via_device=(
+                DOMAIN,
+                f"{self._api.information.serial}_{SynoDownloadStation.INFO_API_KEY}",
+            ),
+        )
 
 
 class SynoDSMInfoSensor(SynoDSMSensor):

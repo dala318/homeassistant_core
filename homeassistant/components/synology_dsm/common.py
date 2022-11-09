@@ -9,6 +9,7 @@ from synology_dsm.api.core.security import SynoCoreSecurity
 from synology_dsm.api.core.system import SynoCoreSystem
 from synology_dsm.api.core.upgrade import SynoCoreUpgrade
 from synology_dsm.api.core.utilization import SynoCoreUtilization
+from synology_dsm.api.download_station import SynoDownloadStation
 from synology_dsm.api.dsm.information import SynoDSMInformation
 from synology_dsm.api.dsm.network import SynoDSMNetwork
 from synology_dsm.api.storage.storage import SynoStorage
@@ -55,6 +56,7 @@ class SynoApi:
         self.security: SynoCoreSecurity = None
         self.storage: SynoStorage = None
         self.surveillance_station: SynoSurveillanceStation = None
+        self.download_station: SynoDownloadStation = None
         self.system: SynoCoreSystem = None
         self.upgrade: SynoCoreUpgrade = None
         self.utilisation: SynoCoreUtilization = None
@@ -65,6 +67,7 @@ class SynoApi:
         self._with_security = True
         self._with_storage = True
         self._with_surveillance_station = True
+        self._with_download_station = True
         self._with_system = True
         self._with_upgrade = True
         self._with_utilisation = True
@@ -105,6 +108,26 @@ class SynoApi:
             "State of Surveillance_station during setup of '%s': %s",
             self._entry.unique_id,
             self._with_surveillance_station,
+        )
+
+        # check if download station is used
+        self._with_download_station = bool(
+            self.dsm.apis.get(SynoDownloadStation.STAT_API_KEY)
+        )
+        if self._with_download_station:
+            try:
+                self.dsm.download_station.update()
+            except SYNOLOGY_CONNECTION_EXCEPTIONS:
+                self._with_download_station = False
+                self.dsm.reset(SynoDownloadStation.API_KEY)
+                LOGGER.info(
+                    "Download Station found, but disabled due to missing user permissions"
+                )
+
+        LOGGER.debug(
+            "State of Download_station during setup of '%s': %s",
+            self._entry.unique_id,
+            self._with_download_station,
         )
 
         # check if upgrade is available
@@ -156,6 +179,9 @@ class SynoApi:
 
         # surveillance_station is updated by own coordinator
         self.dsm.reset(self.surveillance_station)
+
+        # download_station is updated by own coordinator
+        self.dsm.reset(self.download_station)
 
         # Determine if we should fetch an API
         self._with_system = bool(self.dsm.apis.get(SynoCoreSystem.API_KEY))
@@ -243,6 +269,13 @@ class SynoApi:
                 self._entry.unique_id,
             )
             self.surveillance_station = self.dsm.surveillance_station
+
+        if self._with_download_station:
+            LOGGER.debug(
+                "Enable download_station api updates for '%s'",
+                self._entry.unique_id,
+            )
+            self.download_station = self.dsm.download_station
 
     async def _syno_api_executer(self, api_call: Callable) -> None:
         """Synology api call wrapper."""
