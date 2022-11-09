@@ -147,3 +147,46 @@ class SynologyDSMCameraUpdateCoordinator(SynologyDSMUpdateCoordinator):
                 )
 
         return {"cameras": new_data}
+
+
+class SynologyDSMDownloadStationUpdateCoordinator(SynologyDSMUpdateCoordinator):
+    """DataUpdateCoordinator to gather data for a synology_dsm download station."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        api: SynoApi,
+    ) -> None:
+        """Initialize DataUpdateCoordinator for cameras."""
+        super().__init__(hass, entry, api, timedelta(seconds=30))
+
+    async def _async_update_data(self) -> dict[str, dict[str, SynoCamera]]:
+        """Fetch all data from api."""
+        download_station = self.api.download_station
+        # current_data: dict[str, SynoCamera] = {
+        #     camera.id: camera for camera in surveillance_station.get_all_cameras()
+        # }
+
+        try:
+            async with async_timeout.timeout(30):
+                await self.hass.async_add_executor_job(download_station.update)
+        except SynologyDSMAPIErrorException as err:
+            raise UpdateFailed(f"Error communicating with API: {err}") from err
+
+        new_data: dict[str, SynoCamera] = {
+            # camera.id: camera for camera in surveillance_station.get_all_cameras()
+        }
+
+        # for cam_id, cam_data_new in new_data.items():
+        #     if (
+        #         (cam_data_current := current_data.get(cam_id)) is not None
+        #         and cam_data_current.live_view.rtsp != cam_data_new.live_view.rtsp
+        #     ):
+        #         async_dispatcher_send(
+        #             self.hass,
+        #             f"{SIGNAL_CAMERA_SOURCE_CHANGED}_{self.entry.entry_id}_{cam_id}",
+        #             cam_data_new.live_view.rtsp,
+        #         )
+
+        return {"cameras": new_data}

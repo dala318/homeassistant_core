@@ -7,6 +7,7 @@ from .common import SynoApi
 from .coordinator import (
     SynologyDSMCameraUpdateCoordinator,
     SynologyDSMCentralUpdateCoordinator,
+    SynologyDSMDownloadStationUpdateCoordinator,
     SynologyDSMSwitchUpdateCoordinator,
 )
 
@@ -18,4 +19,5 @@ class SynologyDSMData:
     api: SynoApi
     coordinator_central: SynologyDSMCentralUpdateCoordinator
     coordinator_cameras: SynologyDSMCameraUpdateCoordinator | None
+    coordinator_downloads: SynologyDSMDownloadStationUpdateCoordinator | None
     coordinator_switches: SynologyDSMSwitchUpdateCoordinator | None

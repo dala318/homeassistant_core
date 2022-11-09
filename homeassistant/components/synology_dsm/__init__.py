@@ -4,6 +4,7 @@ from __future__ import annotations
 from itertools import chain
 import logging
 
+from synology_dsm.api.download_station import SynoDownloadStation
 from synology_dsm.api.surveillance_station import SynoSurveillanceStation
 from synology_dsm.api.surveillance_station.camera import SynoCamera
 
@@ -26,6 +27,7 @@ from .const import (
 from .coordinator import (
     SynologyDSMCameraUpdateCoordinator,
     SynologyDSMCentralUpdateCoordinator,
+    SynologyDSMDownloadStationUpdateCoordinator,
     SynologyDSMSwitchUpdateCoordinator,
 )
 from .models import SynologyDSMData
@@ -102,6 +104,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator_cameras = SynologyDSMCameraUpdateCoordinator(hass, entry, api)
         await coordinator_cameras.async_config_entry_first_refresh()
 
+    coordinator_downloads: SynologyDSMDownloadStationUpdateCoordinator | None = None
+    if SynoDownloadStation.API_KEY in available_apis:
+        coordinator_downloads = SynologyDSMDownloadStationUpdateCoordinator(
+            hass, entry, api
+        )
+        await coordinator_downloads.async_config_entry_first_refresh()
+
     coordinator_switches: SynologyDSMSwitchUpdateCoordinator | None = None
     if (
         SynoSurveillanceStation.INFO_API_KEY in available_apis
@@ -118,6 +127,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         api=api,
         coordinator_central=coordinator_central,
         coordinator_cameras=coordinator_cameras,
+        coordinator_downloads=coordinator_downloads,
         coordinator_switches=coordinator_switches,
     )
     hass.data.setdefault(DOMAIN, {})[entry.unique_id] = synology_data

@@ -435,15 +435,19 @@ class SynoDSMDownloadStationSensor(SynoDSMSensor):
     @property
     def native_value(self) -> Any | None:
         """Return the state."""
-        attr = getattr(self._api.download_station, self.entity_description.key)
-        if attr is None:
-            return None
+        # info = self._api.download_station.get_info()
+        # tasks = self._api.download_station.get_all_tasks()
+
+        return None
+        # attr = getattr(self._api.download_station, self.entity_description.key)
+        # if attr is None:
+        #     return None
 
         # # Data (disk space)
         # if self.native_unit_of_measurement == DATA_TERABYTES:
         #     return round(attr / 1024.0**4, 2)
 
-        return attr
+        # return attr
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -452,7 +456,7 @@ class SynoDSMDownloadStationSensor(SynoDSMSensor):
             identifiers={
                 (
                     DOMAIN,
-                    f"{self._api.information.serial}_{self._api.download_station.information}",
+                    f"{self._api.information.serial}",
                 )
             },
             # name=self.camera_data.name,
