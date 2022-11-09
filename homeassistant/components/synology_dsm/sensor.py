@@ -278,8 +278,14 @@ INFORMATION_SENSORS: tuple[SynologyDSMSensorEntityDescription, ...] = (
 DOWNLOAD_STATION_SENSORS: tuple[SynologyDSMSensorEntityDescription, ...] = (
     SynologyDSMSensorEntityDescription(
         api_key=SynoDSMInformation.API_KEY,
-        key="active_downloads",
-        name="Active Downloads",
+        key="downloads_active",
+        name="Downloads Active",
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SynologyDSMSensorEntityDescription(
+        api_key=SynoDSMInformation.API_KEY,
+        key="downloads_done",
+        name="Downloads Done",
         state_class=SensorStateClass.MEASUREMENT,
     ),
 )
