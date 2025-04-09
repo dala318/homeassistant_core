@@ -174,6 +174,7 @@ class ESPHomeManager:
     __slots__ = (
         "_cancel_subscribe_logs",
         "_log_level",
+        "_sub_devices",
         "cli",
         "device_id",
         "domain_data",
@@ -209,6 +210,7 @@ class ESPHomeManager:
         self.entry_data = entry.runtime_data
         self._cancel_subscribe_logs: CALLBACK_TYPE | None = None
         self._log_level = LogLevel.LOG_LEVEL_NONE
+        self._sub_devices: list[str] = []
 
     async def on_stop(self, event: Event) -> None:
         """Cleanup the socket client on HA close."""
@@ -494,6 +496,13 @@ class ESPHomeManager:
 
         self.device_id = _async_setup_device_registry(hass, entry, entry_data)
 
+        # self._sub_devices = []
+        # for sub_device in device_info.sub_devices:
+        #     sub_device_id = _async_setup_sub_device_registry(
+        #         hass, entry, entry_data, sub_device, self.device_id
+        #     )
+        #     self._sub_devices.append(sub_device_id)
+
         entry_data.async_update_device_state()
         await entry_data.async_update_static_infos(
             hass, entry, entity_infos, device_info.mac_address
@@ -652,6 +661,16 @@ class ESPHomeManager:
         entry.async_on_unload(
             entry.add_update_listener(entry_data.async_update_listener)
         )
+
+
+# def _async_setup_sub_device_registry(
+#     hass: HomeAssistant,
+#     entry: ESPHomeConfigEntry,
+#     entry_data: RuntimeEntryData,
+#     sub_device_data,  # SubDeviceInfo,
+#     parent_device_id: str,
+# ) -> str:
+#     return ""
 
 
 @callback
