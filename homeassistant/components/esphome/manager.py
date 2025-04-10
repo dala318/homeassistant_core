@@ -499,7 +499,8 @@ class ESPHomeManager:
         # self._sub_devices = []
         # for sub_device in device_info.sub_devices:
         #     sub_device_id = _async_setup_sub_device_registry(
-        #         hass, entry, entry_data, sub_device, self.device_id
+        #         hass, sub_device, self.device_id
+        #         # hass, entry, entry_data, sub_device, self.device_id
         #     )
         #     self._sub_devices.append(sub_device_id)
 
@@ -663,14 +664,41 @@ class ESPHomeManager:
         )
 
 
-# def _async_setup_sub_device_registry(
-#     hass: HomeAssistant,
-#     entry: ESPHomeConfigEntry,
-#     entry_data: RuntimeEntryData,
-#     sub_device_data,  # SubDeviceInfo,
-#     parent_device_id: str,
-# ) -> str:
-#     return ""
+def _async_setup_sub_device_registry(
+    hass: HomeAssistant,
+    # entry: ESPHomeConfigEntry,
+    # entry_data: RuntimeEntryData,
+    sub_device_data: Any,  # SubDeviceInfo,
+    parent_device_id: str,
+) -> str:
+    device_registry = dr.async_get(hass)
+    device_entry = device_registry.async_get_or_create(
+        config_entry_id=sub_device_data.id,
+        name=sub_device_data.name,
+        suggested_area=sub_device_data.suggested_area,
+        via_device=(DOMAIN, parent_device_id),
+        # config_subentry_id: str | None | UndefinedType = UNDEFINED,
+        # configuration_url: str | URL | None | UndefinedType = UNDEFINED,
+        # connections: set[tuple[str, str]] | None | UndefinedType = UNDEFINED,
+        # created_at: str | datetime | UndefinedType = UNDEFINED,  # will be ignored
+        # default_manufacturer: str | None | UndefinedType = UNDEFINED,
+        # default_model: str | None | UndefinedType = UNDEFINED,
+        # default_name: str | None | UndefinedType = UNDEFINED,
+        # # To disable a device if it gets created
+        # disabled_by: DeviceEntryDisabler | None | UndefinedType = UNDEFINED,
+        # entry_type: DeviceEntryType | None | UndefinedType = UNDEFINED,
+        # hw_version: str | None | UndefinedType = UNDEFINED,
+        # identifiers: set[tuple[str, str]] | None | UndefinedType = UNDEFINED,
+        # manufacturer: str | None | UndefinedType = UNDEFINED,
+        # model: str | None | UndefinedType = UNDEFINED,
+        # model_id: str | None | UndefinedType = UNDEFINED,
+        # modified_at: str | datetime | UndefinedType = UNDEFINED,  # will be ignored
+        # serial_number: str | None | UndefinedType = UNDEFINED,
+        # sw_version: str | None | UndefinedType = UNDEFINED,
+        # translation_key: str | None = None,
+        # translation_placeholders: Mapping[str, str] | None = None,
+    )
+    return device_entry.id
 
 
 @callback
